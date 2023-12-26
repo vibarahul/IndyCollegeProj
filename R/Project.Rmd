@@ -1,0 +1,207 @@
+---
+title: "Project"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-04-29"
+---
+#Loading and reading the cleaned csv dataset from the specified directory
+```{r}
+data<- read.csv("C:/Users/vibar/Downloads/Drug_clean.csv")
+
+#Numerically encoding the Type of Drug column
+data$Status <- ifelse(data$Type == "RX", 0, 
+               ifelse(data$Type %in% c("OTC"), 1, 2))
+
+head(data)
+
+```
+
+#Checking for Missing and Duplicate Values
+```{r}
+#Missing Values
+if (any(is.na(data))) {
+  print("There are missing values in the dataset.")
+} else {
+  print("There are no missing values in the dataset.")
+}
+
+#For Duplicates
+if (any(duplicated(data))) {
+  print("There are duplicate rows in the dataset.")
+} else {
+  print("There are no duplicate rows in the dataset.")
+}
+```
+#Descriptive Statistics
+For both the continuous variables "Effective and "Satisfaction"
+```{r}
+# Calculate mean
+mean1<- mean(data$Effective)
+cat("The mean of the Effectiveness variable is:", mean1, "\n")
+mean2<- mean(data$Satisfaction)
+cat("The mean of the Satisfaction variable is:", mean2, "\n")
+
+# Calculate median
+median1<- median(data$Effective)
+cat("The median of the Effectiveness variable is:", median1, "\n")
+median2<- median(data$Satisfaction)
+cat("The median of the Satisfaction variable is:", median2, "\n")
+
+# Calculate range
+range1<- range(data$Effective)
+cat("The range of the Effectiveness variable is:", range1, "\n")
+range2<- range(data$Satisfaction)
+cat("The range of the Satisfaction variable is:", range2, "\n")
+
+# Calculate standard deviation
+sd1<- sd(data$Effective)
+cat("The sd of the Effectiveness variable is:", sd1, "\n")
+sd2<-sd(data$Satisfaction)
+cat("The sd of the Satisfaction variable is:", sd2, "\n")
+```
+
+#Graphical analysis of the data
+Scatter Plot
+```{r}
+scatter.smooth(x = data$Satisfaction, y = data$Effective, main = "Satisfaction vs Effectiveness")
+points(x = data$Satisfaction, y = data$Effective, col = "green", pch = 16)
+points(x = data$Satisfaction, y = data$Effective, col = rgb(0, 0, 1, alpha = 0.5), pch = 16)
+
+```
+#Graphical analysis of the data
+Box-Plot Of the data
+```{r}
+par(mfrow = c(1,2))
+boxplot(data$Effective,main = "Drug Effectiveness", col = "blue")
+boxplot(data$Satisfaction,main = "Drug Satisfaction", col = "green")
+```
+install.packages("moments")
+library(moments)
+
+#Graphical analysis of the data
+Histogram 
+```{r}
+
+#Count for Drug Type
+library(ggplot2)
+plot <- ggplot(data, aes(x = Type)) +
+  geom_bar(fill = "red") +
+  labs(title = "Count Plot of Drug Types", x = "Drug Types", y = "Count") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Display the plot
+print(plot)
+
+#Histogram for Effective
+hist(data$Effective, col = "blue",
+     xlab = "Interval", main = "Effectiveness")
+
+
+#Histogram for Satisfaction
+hist(data$Satisfaction, col = "green",
+     xlab = "Interval", main = "Satisfaction")
+
+```
+
+#Graphical analysis of the data
+Density Plot
+```{r}
+library(e1071)
+par(mfrow=c(1, 3))
+plot(density(data$Status), main="Density Plot: Drug Type", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(data$Status), 2)))  
+polygon(density(data$Status), col="red")
+
+plot(density(data$Effective), main="Density Plot: Effectiveness", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(data$Effective), 2)))  
+polygon(density(data$Effective), col="blue")
+
+plot(density(data$Satisfaction), main="Density Plot: Satisfaction", ylab="Frequency", sub=paste("Skewness:", round(e1071::skewness(data$Satisfaction), 2)))  
+polygon(density(data$Satisfaction), col="green")
+
+```
+
+#Correlation Test between the variables
+```{r}
+# Between Status and Effectiveness
+cor(data$Status,data$Effective)
+
+# Between Status and Satisfaction
+cor(data$Status,data$Satisfaction)
+```
+#Shapiro-Wilk Test
+```{r}
+# Perform Shapiro-Wilk test for Effective by Status
+shapiro.test(data$Effective)
+
+# Perform Shapiro-Wilk test for Satisfaction by Status
+shapiro.test(data$Satisfaction)
+```
+
+#Kruskal-Wallis Test
+```{r}
+# Perform Kruskal-Wallis test for Effective by Status
+kruskal.test(Effective ~ Status, data = data)
+
+# Perform Kruskal-Wallis test for Satisfaction by Status
+kruskal.test(Satisfaction ~ Status, data = data)
+
+```
+
+#Calculating the Skewness and the Kurtosis for the Continous Variables
+```{r}
+# Calculate skewness
+skew <- skewness(data$Satisfaction)
+cat("The skewness of the Satisfaction variable is:", skew, "\n")
+
+# Calculate kurtosis
+kurt <- kurtosis(data$Satisfaction)
+cat("The kurtosis of the Satisfaction variable is:", kurt, "\n")
+
+
+# Calculate skewness
+skew <- skewness(data$Effective)
+cat("The skewness of the Effective variable is:", skew, "\n")
+
+# Calculate kurtosis
+kurt <- kurtosis(data$Effective)
+cat("The kurtosis of the Effective variable is:", kurt, "\n")
+```
+
+#Building the Generalized Linear Model
+Effectiveness and Satisfaction Combined
+```{r}
+model1 <- glm(Status ~ Effective + Satisfaction, data = data)
+summary(model1)
+```
+#Proceeding ahead with Mutlinomial Logistic Regression owing to the high AIC by GLM
+
+
+#Building the Multinomial Logistic Regression Model
+Effectiveness and Satisfaction Combined 
+```{r}
+library(nnet)
+model2 <- multinom(Status ~ Effective + Satisfaction, data = data)
+summary(model2)
+
+```
+#Multinomial Logistic Regression performs better when compared to GLM on Residual Deviance and AIC
+
+
+#Building the Multinomial Logistic Regression Model
+Between Satisfaction and Status
+```{r}
+library(nnet)
+model3 <- multinom(Status ~ Satisfaction, data = data)
+
+summary(model3)
+
+```
+
+
+##Building the Multinomial Logistic Regression Model
+Between Effectiveness and Status
+```{r}
+library(nnet)
+model4 <- multinom(Status ~ Effective, data = data)
+summary(model4)
+```
